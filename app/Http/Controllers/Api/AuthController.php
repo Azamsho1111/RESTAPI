@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -13,108 +14,80 @@ class AuthController extends Controller
 {
     /**
      * Авторизация пользователя
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function login(Request $request): JsonResponse
     {
-        try {
-            $request->validate([
-                'email' => 'required|email',
-                'password' => 'required|string',
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Неправильные учетные данные.'],
             ]);
-
-            $credentials = $request->only('email', 'password');
-
-            if (Auth::attempt($credentials)) {
-                $user = Auth::user();
-                $token = $user->createToken('AdminPanel')->plainTextToken;
-
-                return response()->json([
-                    'success' => true,
-                    'token' => $token,
-                    'user' => [
-                        'id' => $user->id,
-                        'email' => $user->email,
-                        'name' => $user->name,
-                        'role' => $user->role ?? 'admin'
-                    ]
-                ]);
-            }
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Неверные учетные данные'
-            ], 401);
-
-        } catch (ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка валидации',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка авторизации',
-                'error' => $e->getMessage()
-            ], 500);
         }
+
+        $token = $user->createToken('admin-panel')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'token' => $token,
+            'user' => $user,
+        ]);
     }
 
     /**
-     * Получить данные текущего пользователя
-     *
-     * @param Request $request
-     * @return JsonResponse
+     * Регистрация пользователя
      */
-    public function user(Request $request): JsonResponse
+    public function register(Request $request): JsonResponse
     {
-        try {
-            $user = $request->user();
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6|confirmed',
+            'role' => 'required|string|in:admin,moderator,manager',
+        ]);
 
-            return response()->json([
-                'success' => true,
-                'user' => [
-                    'id' => $user->id,
-                    'email' => $user->email,
-                    'name' => $user->name,
-                    'role' => $user->role ?? 'admin'
-                ]
-            ]);
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
+        ]);
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Пользователь не авторизован',
-                'error' => $e->getMessage()
-            ], 401);
-        }
+        $token = $user->createToken('admin-panel')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'token' => $token,
+            'user' => $user,
+        ], 201);
     }
 
     /**
      * Выход из системы
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function logout(Request $request): JsonResponse
     {
-        try {
-            $request->user()->currentAccessToken()->delete();
+        $request->user()->currentAccessToken()->delete();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Успешный выход из системы'
-            ]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Выход выполнен успешно',
+        ]);
+    }
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка при выходе',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+    /**
+     * Получить данные текущего пользователя
+     */
+    public function user(Request $request): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'user' => $request->user(),
+        ]);
     }
 }
