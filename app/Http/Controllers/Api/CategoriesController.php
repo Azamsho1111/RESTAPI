@@ -8,223 +8,259 @@ use Illuminate\Http\JsonResponse;
 
 class CategoriesController extends Controller
 {
-    /**
-     * Список категорий
-     * GET /api/categories
-     */
-    public function index(): JsonResponse
+    // Категории
+    public function getCategories(): JsonResponse
     {
-        try {
-            $categories = [
-                [
-                    'id' => 1,
-                    'name' => 'Архитектура',
-                    'name_en' => 'Architecture',
-                    'icon' => 'building',
-                    'position' => 1,
-                    'models_count' => 25,
-                    'sections_count' => 5
-                ],
-                [
-                    'id' => 2,
-                    'name' => 'Мебель',
-                    'name_en' => 'Furniture',
-                    'icon' => 'chair',
-                    'position' => 2,
-                    'models_count' => 150,
-                    'sections_count' => 12
-                ],
-                [
-                    'id' => 3,
-                    'name' => 'Транспорт',
-                    'name_en' => 'Transport',
-                    'icon' => 'car',
-                    'position' => 3,
-                    'models_count' => 75,
-                    'sections_count' => 8
-                ],
-                [
-                    'id' => 4,
-                    'name' => 'Декор',
-                    'name_en' => 'Decor',
-                    'icon' => 'decoration',
-                    'position' => 4,
-                    'models_count' => 90,
-                    'sections_count' => 15
-                ],
-                [
-                    'id' => 5,
-                    'name' => 'Освещение',
-                    'name_en' => 'Lighting',
-                    'icon' => 'lightbulb',
-                    'position' => 5,
-                    'models_count' => 45,
-                    'sections_count' => 6
-                ]
-            ];
-
-            return response()->json([
-                'success' => true,
-                'data' => $categories
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка загрузки категорий',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => [],
+        ]);
     }
 
-    /**
-     * Создание категории
-     * POST /api/categories
-     */
-    public function store(Request $request): JsonResponse
+    public function createCategory(Request $request): JsonResponse
     {
-        try {
-            $request->validate([
-                'name' => 'required|string|max:255',
-                'name_en' => 'required|string|max:255',
-                'icon' => 'nullable|string',
-                'position' => 'nullable|integer'
-            ]);
-
-            $category = [
-                'id' => rand(1000, 9999),
-                'name' => $request->name,
-                'name_en' => $request->name_en,
-                'icon' => $request->icon,
-                'position' => $request->position ?? 999,
-                'models_count' => 0,
-                'created_at' => now()
-            ];
-
-            return response()->json([
-                'success' => true,
-                'data' => $category,
-                'message' => 'Категория успешно создана'
-            ], 201);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка создания категории',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Категория создана'], 201);
     }
 
-    /**
-     * Получение категории по ID
-     * GET /api/categories/{id}
-     */
-    public function show($id): JsonResponse
+    public function updateCategory(Request $request, $id): JsonResponse
     {
-        try {
-            $category = [
-                'id' => $id,
-                'name' => 'Мебель',
-                'name_en' => 'Furniture',
-                'icon' => 'chair',
-                'position' => 2,
-                'models_count' => 150,
-                'sections' => [
-                    ['id' => 1, 'name' => 'Столы', 'name_en' => 'Tables'],
-                    ['id' => 2, 'name' => 'Стулья', 'name_en' => 'Chairs'],
-                    ['id' => 3, 'name' => 'Диваны', 'name_en' => 'Sofas']
-                ]
-            ];
-
-            return response()->json([
-                'success' => true,
-                'data' => $category
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Категория не найдена',
-                'error' => $e->getMessage()
-            ], 404);
-        }
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Категория обновлена']);
     }
 
-    /**
-     * Обновление категории
-     * PUT /api/categories/{id}
-     */
-    public function update(Request $request, $id): JsonResponse
+    public function deleteCategory($id): JsonResponse
     {
-        try {
-            $request->validate([
-                'name' => 'sometimes|required|string|max:255',
-                'name_en' => 'sometimes|required|string|max:255',
-                'icon' => 'nullable|string',
-                'position' => 'nullable|integer'
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Категория успешно обновлена'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка обновления категории',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json(['success' => true, 'message' => 'Категория удалена']);
     }
 
-    /**
-     * Удаление категории
-     * DELETE /api/categories/{id}
-     */
-    public function destroy($id): JsonResponse
+    // Секции
+    public function getSections(): JsonResponse
     {
-        try {
-            return response()->json([
-                'success' => true,
-                'message' => 'Категория успешно удалена'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка удаления категории',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json(['success' => true, 'data' => []]);
     }
 
-    /**
-     * Разделы в категории
-     * GET /api/categories/{id}/sections
-     */
-    public function sections($id): JsonResponse
+    public function createSection(Request $request): JsonResponse
     {
-        try {
-            $sections = [
-                ['id' => 1, 'name' => 'Столы', 'name_en' => 'Tables', 'position' => 1],
-                ['id' => 2, 'name' => 'Стулья', 'name_en' => 'Chairs', 'position' => 2],
-                ['id' => 3, 'name' => 'Диваны', 'name_en' => 'Sofas', 'position' => 3],
-                ['id' => 4, 'name' => 'Шкафы', 'name_en' => 'Wardrobes', 'position' => 4]
-            ];
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Секция создана'], 201);
+    }
 
-            return response()->json([
-                'success' => true,
-                'data' => $sections
-            ]);
+    public function updateSection(Request $request, $id): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Секция обновлена']);
+    }
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка загрузки разделов',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+    public function deleteSection($id): JsonResponse
+    {
+        return response()->json(['success' => true, 'message' => 'Секция удалена']);
+    }
+
+    // Материалы
+    public function getMaterials(): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => []]);
+    }
+
+    public function createMaterial(Request $request): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Материал создан'], 201);
+    }
+
+    public function updateMaterial(Request $request, $id): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Материал обновлен']);
+    }
+
+    public function deleteMaterial($id): JsonResponse
+    {
+        return response()->json(['success' => true, 'message' => 'Материал удален']);
+    }
+
+    // Рендеры
+    public function getRenders(): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => []]);
+    }
+
+    public function createRender(Request $request): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Рендер создан'], 201);
+    }
+
+    public function updateRender(Request $request, $id): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Рендер обновлен']);
+    }
+
+    public function deleteRender($id): JsonResponse
+    {
+        return response()->json(['success' => true, 'message' => 'Рендер удален']);
+    }
+
+    // Цвета
+    public function getColors(): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => []]);
+    }
+
+    public function createColor(Request $request): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Цвет создан'], 201);
+    }
+
+    public function updateColor(Request $request, $id): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Цвет обновлен']);
+    }
+
+    public function deleteColor($id): JsonResponse
+    {
+        return response()->json(['success' => true, 'message' => 'Цвет удален']);
+    }
+
+    // Программы
+    public function getSofts(): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => []]);
+    }
+
+    public function createSoft(Request $request): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Программа создана'], 201);
+    }
+
+    public function updateSoft(Request $request, $id): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Программа обновлена']);
+    }
+
+    public function deleteSoft($id): JsonResponse
+    {
+        return response()->json(['success' => true, 'message' => 'Программа удалена']);
+    }
+
+    // Форматы
+    public function getFormats(): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => []]);
+    }
+
+    public function createFormat(Request $request): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Формат создан'], 201);
+    }
+
+    public function updateFormat(Request $request, $id): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Формат обновлен']);
+    }
+
+    public function deleteFormat($id): JsonResponse
+    {
+        return response()->json(['success' => true, 'message' => 'Формат удален']);
+    }
+
+    // Полигоны
+    public function getPolygons(): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => []]);
+    }
+
+    public function createPolygon(Request $request): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Полигонаж создан'], 201);
+    }
+
+    public function updatePolygon(Request $request, $id): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Полигонаж обновлен']);
+    }
+
+    public function deletePolygon($id): JsonResponse
+    {
+        return response()->json(['success' => true, 'message' => 'Полигонаж удален']);
+    }
+
+    // Стили
+    public function getStyles(): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => []]);
+    }
+
+    public function createStyle(Request $request): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Стиль создан'], 201);
+    }
+
+    public function updateStyle(Request $request, $id): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Стиль обновлен']);
+    }
+
+    public function deleteStyle($id): JsonResponse
+    {
+        return response()->json(['success' => true, 'message' => 'Стиль удален']);
+    }
+
+    // Анимация
+    public function getAnimation(): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => []]);
+    }
+
+    public function createAnimation(Request $request): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Анимация создана'], 201);
+    }
+
+    public function updateAnimation(Request $request, $id): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Анимация обновлена']);
+    }
+
+    public function deleteAnimation($id): JsonResponse
+    {
+        return response()->json(['success' => true, 'message' => 'Анимация удалена']);
+    }
+
+    // Прочее
+    public function getOthers(): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => []]);
+    }
+
+    public function createOther(Request $request): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Элемент создан'], 201);
+    }
+
+    public function updateOther(Request $request, $id): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        return response()->json(['success' => true, 'message' => 'Элемент обновлен']);
+    }
+
+    public function deleteOther($id): JsonResponse
+    {
+        return response()->json(['success' => true, 'message' => 'Элемент удален']);
     }
 }
