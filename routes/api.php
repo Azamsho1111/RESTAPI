@@ -12,14 +12,17 @@ use App\Http\Controllers\Api\ModelsController;
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/register', [AuthController::class, 'register']);
 
+// Публичные данные для админ-панели (БЕЗ авторизации)
+Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
+Route::get('/categories', [CategoriesController::class, 'getCategories']);
+
 // Защищенные маршруты
 Route::middleware('auth:sanctum')->group(function () {
     // Авторизация
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/user', [AuthController::class, 'user']);
 
-    // Дашборд
-    Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
+    // Дашборд (защищенные endpoint'ы)
     Route::get('/dashboard/recent-models', [DashboardController::class, 'getRecentModels']);
     Route::get('/dashboard/recent-users', [DashboardController::class, 'getRecentUsers']);
 
@@ -37,9 +40,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/models/{id}', [ModelsController::class, 'update']);
     Route::delete('/models/{id}', [ModelsController::class, 'destroy']);
 
-    // Категории и фильтры
+    // Категории и фильтры (защищенные операции)
     Route::prefix('categories')->group(function () {
-        Route::get('/', [CategoriesController::class, 'getCategories']);
         Route::post('/', [CategoriesController::class, 'createCategory']);
         Route::put('/{id}', [CategoriesController::class, 'updateCategory']);
         Route::delete('/{id}', [CategoriesController::class, 'deleteCategory']);
