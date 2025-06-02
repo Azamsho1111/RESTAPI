@@ -3,226 +3,130 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UsersController extends Controller
 {
-    /**
-     * Список пользователей
-     * GET /api/users
-     */
     public function index(Request $request): JsonResponse
     {
-        try {
-            // Тестовые данные пользователей
-            $users = [
-                [
-                    'id' => 1,
-                    'name' => 'Администратор',
-                    'email' => 'admin@cgarea.ru',
-                    'role' => 'admin',
-                    'status' => 'active',
-                    'balance' => 1500.00,
-                    'models_count' => 25,
-                    'created_at' => '2024-01-01'
-                ],
-                [
-                    'id' => 2,
-                    'name' => 'Модератор',
-                    'email' => 'moderator@cgarea.ru',
-                    'role' => 'moderator',
-                    'status' => 'active',
-                    'balance' => 750.00,
-                    'models_count' => 12,
-                    'created_at' => '2024-01-05'
-                ],
-                [
-                    'id' => 3,
-                    'name' => 'Дизайнер 3D',
-                    'email' => 'designer@cgarea.ru',
-                    'role' => 'user',
-                    'status' => 'active',
-                    'balance' => 2500.00,
-                    'models_count' => 50,
-                    'created_at' => '2024-01-10'
-                ]
-            ];
+        $query = User::query();
 
-            return response()->json([
-                'success' => true,
-                'data' => $users,
-                'total' => count($users)
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка загрузки пользователей',
-                'error' => $e->getMessage()
-            ], 500);
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
         }
+
+        if ($request->has('role')) {
+            $query->where('role', $request->get('role'));
+        }
+
+        if ($request->has('status')) {
+            $query->where('status', $request->get('status'));
+        }
+
+        $users = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        return response()->json([
+            'success' => true,
+            'data' => $users,
+        ]);
     }
 
-    /**
-     * Создание пользователя
-     * POST /api/users
-     */
     public function store(Request $request): JsonResponse
     {
-        try {
-            $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|email|unique:users,email',
-                'password' => 'required|string|min:8',
-                'role' => 'required|in:admin,moderator,user,studio'
-            ]);
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6',
+            'role' => 'required|string|in:admin,moderator,manager',
+            'phone' => 'nullable|string|max:20',
+        ]);
 
-            $user = [
-                'id' => rand(1000, 9999),
-                'name' => $request->name,
-                'email' => $request->email,
-                'role' => $request->role,
-                'status' => 'active',
-                'balance' => 0,
-                'created_at' => now()
-            ];
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
+            'phone' => $request->phone,
+            'status' => 'active',
+        ]);
 
-            return response()->json([
-                'success' => true,
-                'data' => $user,
-                'message' => 'Пользователь успешно создан'
-            ], 201);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка создания пользователя',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $user,
+            'message' => 'Пользователь создан успешно',
+        ], 201);
     }
 
-    /**
-     * Получение пользователя по ID
-     * GET /api/users/{id}
-     */
-    public function show($id): JsonResponse
+    public function show(User $user): JsonResponse
     {
-        try {
-            $user = [
-                'id' => $id,
-                'name' => 'Тестовый пользователь',
-                'email' => 'test@example.com',
-                'role' => 'user',
-                'status' => 'active',
-                'balance' => 500.00,
-                'models_count' => 10
-            ];
-
-            return response()->json([
-                'success' => true,
-                'data' => $user
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Пользователь не найден',
-                'error' => $e->getMessage()
-            ], 404);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $user,
+        ]);
     }
 
-    /**
-     * Обновление пользователя
-     * PUT /api/users/{id}
-     */
-    public function update(Request $request, $id): JsonResponse
+    public function update(Request $request, User $user): JsonResponse
     {
-        try {
-            $request->validate([
-                'name' => 'sometimes|required|string|max:255',
-                'email' => 'sometimes|required|email',
-                'role' => 'sometimes|required|in:admin,moderator,user,studio',
-                'status' => 'sometimes|required|in:active,blocked'
-            ]);
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'role' => 'required|string|in:admin,moderator,manager',
+            'phone' => 'nullable|string|max:20',
+            'password' => 'nullable|string|min:6',
+        ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Пользователь успешно обновлен'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка обновления пользователя',
-                'error' => $e->getMessage()
-            ], 500);
+        $data = $request->only(['name', 'email', 'role', 'phone']);
+        
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
         }
+
+        $user->update($data);
+
+        return response()->json([
+            'success' => true,
+            'data' => $user,
+            'message' => 'Пользователь обновлен успешно',
+        ]);
     }
 
-    /**
-     * Удаление пользователя
-     * DELETE /api/users/{id}
-     */
-    public function destroy($id): JsonResponse
+    public function destroy(User $user): JsonResponse
     {
-        try {
-            return response()->json([
-                'success' => true,
-                'message' => 'Пользователь успешно удален'
-            ]);
+        $user->delete();
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка удаления пользователя',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Пользователь удален успешно',
+        ]);
     }
 
-    /**
-     * Баланс и история транзакций пользователя
-     * GET /api/users/{id}/wallet
-     */
-    public function wallet($id): JsonResponse
+    public function block(User $user): JsonResponse
     {
-        try {
-            $wallet = [
-                'user_id' => $id,
-                'balance' => 1250.50,
-                'transactions' => [
-                    [
-                        'id' => 1,
-                        'type' => 'income',
-                        'amount' => 500.00,
-                        'description' => 'Продажа модели "Стул офисный"',
-                        'date' => '2024-01-15'
-                    ],
-                    [
-                        'id' => 2,
-                        'type' => 'withdrawal',
-                        'amount' => 200.00,
-                        'description' => 'Вывод средств',
-                        'date' => '2024-01-10'
-                    ]
-                ]
-            ];
+        $user->update(['status' => 'blocked']);
 
-            return response()->json([
-                'success' => true,
-                'data' => $wallet
-            ]);
+        return response()->json([
+            'success' => true,
+            'data' => $user,
+            'message' => 'Пользователь заблокирован',
+        ]);
+    }
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ошибка загрузки данных кошелька',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+    public function unblock(User $user): JsonResponse
+    {
+        $user->update(['status' => 'active']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $user,
+            'message' => 'Пользователь разблокирован',
+        ]);
     }
 }
