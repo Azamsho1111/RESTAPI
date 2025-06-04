@@ -55,4 +55,40 @@ class DashboardController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Получить последних пользователей
+     */
+    public function getRecentUsers(): JsonResponse
+    {
+        $recentUsers = User::orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $recentUsers,
+        ]);
+    }
+
+    /**
+     * Получить последние модели
+     */
+    public function getRecentModels(): JsonResponse
+    {
+        // Таблица моделей пока отсутствует, поэтому возвращаем статичную структуру
+        $models = [
+            [
+                'id' => 1,
+                'name' => 'Тестовая модель',
+                'status' => 'pending',
+                'created_at' => now()->toISOString(),
+            ],
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $models,
+        ]);
+    }
 }
